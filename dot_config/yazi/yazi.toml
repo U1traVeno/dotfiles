@@ -1,0 +1,26 @@
+[opener]
+edit = [
+  { run = '$EDITOR "$@"', block = true, for = "linux" },
+  { run = '$EDITOR "$@"', block = true, for = "macos" },
+]
+
+# PDF 查看器：强制指定使用 firefox
+pdf_web = [
+    { run = 'firefox "$@"', orphan = true, for = "linux" },
+    { run = 'open -a "Firefox" "$@"', orphan = true, for = "macos" },
+]
+
+[open]
+rules = [
+    # 将 pdf 后缀的文件关联到上面定义的 pdf_web 打开方式
+    { name = "*.pdf", use = "pdf_web" },
+
+    # 2. 处理文本文件（根据文件扩展名）
+    { name = "*.txt", use = "edit" },
+    { name = "*.md",  use = "edit" },
+    { name = "*.toml", use = "edit" },
+    { name = "*.json", use = "edit" },
+
+    # 3. 兜底策略：如果以上都不匹配，尝试用编辑器打开（针对无后缀或代码文件）
+    { mime = "text/*", use = "edit" },
+]
