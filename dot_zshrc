@@ -1,0 +1,278 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Start configuration added by Zim Framework install {{{
+#
+# User configuration sourced by interactive shells
+#
+
+# -----------------
+# Zsh configuration
+# -----------------
+
+#
+# History
+#
+
+# Remove older command from the history if a duplicate is to be added.
+setopt HIST_IGNORE_ALL_DUPS
+
+#
+# Input/output
+#
+
+# Set editor default keymap to emacs (`-e`) or vi (`-v`)Vj
+bindkey -v
+
+# Prompt for spelling correction of commands.
+#setopt CORRECT
+
+# Customize spelling correction prompt.
+#SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
+
+# Remove path separator from WORDCHARS.
+WORDCHARS=${WORDCHARS//[\/]}
+
+
+# -------------------
+# zimfw configuration
+# -------------------
+
+# Use degit instead of git as the default tool to install and update modules.
+#zstyle ':zim:zmodule' use 'degit'
+
+# --------------------
+# Module configuration
+# --------------------
+
+#
+# git
+#
+
+# Set a custom prefix for the generated aliases. The default prefix is 'G'.
+#zstyle ':zim:git' aliases-prefix 'g'
+
+#
+# input
+#
+
+# Append `../` to your input for each `.` you type after an initial `..`
+#zstyle ':zim:input' double-dot-expand yes
+
+#
+# termtitle
+#
+
+# Set a custom terminal title format using prompt expansion escape sequences.
+# See http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html#Simple-Prompt-Escapes
+# If none is provided, the default '%n@%m: %~' is used.
+#zstyle ':zim:termtitle' format '%1~'
+
+#
+# zsh-autosuggestions
+#
+
+# Disable automatic widget re-binding on each precmd. This can be set when
+# zsh-users/zsh-autosuggestions is the last module in your ~/.zimrc.
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+
+# Customize the style that the suggestions are shown with.
+# See https://github.com/zsh-users/zsh-autosuggestions/blob/master/README.md#suggestion-highlight-style
+#ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
+
+#
+# zsh-syntax-highlighting
+#
+
+# Set what highlighters will be used.
+# See https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters.md
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
+
+# Customize the main highlighter styles.
+# See https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters/main.md#how-to-tweak-it
+#typeset -A ZSH_HIGHLIGHT_STYLES
+#ZSH_HIGHLIGHT_STYLES[comment]='fg=242'
+
+# ------------------
+# Initialize modules
+# ------------------
+
+ZIM_HOME=${ZDOTDIR:-${HOME}}/.zim
+# Download zimfw plugin manager if missing.
+if [[ ! -e ${ZIM_HOME}/zimfw.zsh ]]; then
+  if (( ${+commands[curl]} )); then
+    curl -fsSL --create-dirs -o ${ZIM_HOME}/zimfw.zsh \
+        https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+  else
+    mkdir -p ${ZIM_HOME} && wget -nv -O ${ZIM_HOME}/zimfw.zsh \
+        https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+  fi
+fi
+# Install missing modules, and update ${ZIM_HOME}/init.zsh if missing or outdated.
+if [[ ! ${ZIM_HOME}/init.zsh -nt ${ZIM_CONFIG_FILE:-${ZDOTDIR:-${HOME}}/.zimrc} ]]; then
+  source ${ZIM_HOME}/zimfw.zsh init
+fi
+# Initialize modules.
+source ${ZIM_HOME}/init.zsh
+
+# ------------------------------
+# Post-init module configuration
+# ------------------------------
+
+#
+# zsh-history-substring-search
+#
+
+zmodload -F zsh/terminfo +p:terminfo
+# Bind ^[[A/^[[B manually so up/down works both before and after zle-line-init
+for key ('^[[A' '^P' ${terminfo[kcuu1]}) bindkey ${key} history-substring-search-up
+for key ('^[[B' '^N' ${terminfo[kcud1]}) bindkey ${key} history-substring-search-down
+for key ('k') bindkey -M vicmd ${key} history-substring-search-up
+for key ('j') bindkey -M vicmd ${key} history-substring-search-down
+unset key
+# }}} End configuration added by Zim Framework install
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# yazi
+function y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+  command yazi "$@" --cwd-file="$tmp"
+  IFS= read -r -d '' cwd < "$tmp"
+  [ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+  rm -f -- "$tmp"
+}
+
+# alias
+alias lg=lazygit
+alias t=tmux
+alias tai=tmuxai
+
+# exports
+export PATH="/opt/homebrew/opt/zip/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+export DOCKER_BUILDKIT=1
+export EDITOR="nvim"
+
+function mphp() {
+    local port=8000
+    local recursive=false
+    local positional_args=()
+
+    # 1. 解析参数
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -r|--recursive)
+                recursive=true
+                shift
+                ;;
+            *)
+                positional_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # 如果提供了数字参数，则视为端口
+    [[ -n "${positional_args[1]}" ]] && port="${positional_args[1]}"
+
+    local local_ip=$(ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print $1}')
+    local host="localhost"
+
+    echo "\e[1;32m--- PHP Development Server ---\e[0m"
+    echo "Document root: \e[33m$(pwd)\e[0m"
+    [[ "$recursive" == true ]] && echo "Mode: \e[35mRecursive Search\e[0m"
+
+    echo "Available PHP Links:"
+
+    # 2. 根据模式查找文件
+    local find_cmd
+    if [[ "$recursive" == true ]]; then
+        # 递归查找，排除常见的大型目录以防刷屏
+        find_cmd=$(find . -type f -name "*.php" -not -path "*/vendor/*" -not -path "*/.*/*" | sed 's|^\./||')
+    else
+        # 仅限当前目录
+        find_cmd=$(find . -maxdepth 1 -type f -name "*.php" | sed 's|^\./||')
+    fi
+
+    # 3. 打印链接
+    if [[ -z "$find_cmd" ]]; then
+        echo "  \e[90m(No .php files found)\e[0m"
+        echo "  Main URL: \e[1;34mhttp://${host}:${port}\e[0m"
+    else
+        echo "$find_cmd" | while read -r file; do
+            # 对 URL 进行简单的路径编码转换（处理空格等）
+            local encoded_file=$(echo "$file" | sed 's/ /%20/g')
+            printf "  \e[32m➜\e[0m %-20s \e[1;34mhttp://%s:%s/%s\e[0m\n" "$file" "$host" "$port" "$encoded_file"
+        done
+    fi
+
+    if [[ -z "$local_ip" ]]; then
+        echo "Network Access: \e[1;34mhttp://${local_ip}:${port}\e[0m"
+    fi
+    
+    echo "\e[1;32m-------------------------------\e[0m"
+    echo "Press Ctrl+C to stop."
+    
+    # 4. 启动服务器
+    php -S 0.0.0.0:${port}
+}
+
+# Java version management function
+function jv() {
+    [[ "$(uname)" != "Darwin" ]] && { echo "unsupported" >&2; return 1 }
+
+    if [[ $# -eq 0 ]]; then
+        local current_version current_path
+        current_version=$(java -version 2>&1 | head -1)
+        current_version="${current_version#*\"}"
+        current_version="${current_version%%\"*}"
+        current_path="${JAVA_HOME:-$(/usr/libexec/java_home)}"
+
+        echo "Current:  $current_version  $current_path"
+        echo ""
+        echo "Available:"
+
+        /usr/libexec/java_home -V 2>&1 | awk '
+        NR==1 || /^$/ || /^\// { next }
+        {
+            version = $1
+            arch = $2
+            gsub(/[()]/, "", arch)
+            vendor = ""
+            for(i=4; i<=NF; i++) {
+                if ($i == "-") { i++; break }
+            }
+            for(; i<=NF; i++) {
+                if ($i ~ /\/Library\/Java/) {
+                    path = $i
+                    break
+                }
+                if (vendor != "") vendor = vendor " "
+                vendor = vendor $i
+            }
+            gsub(/"/, "", vendor)
+            printf "  %-8s  %-6s  %-15s  %s\n", version, arch, vendor, path
+        }'
+        return 0
+    fi
+
+    local target_version="$1"
+    local java_home
+
+    java_home=$(/usr/libexec/java_home -v "$target_version" 2>/dev/null)
+
+    if [[ -z "$java_home" ]]; then
+        echo "Version not found: $target_version" >&2
+        return 1
+    fi
+
+    export JAVA_HOME="$java_home"
+    export PATH="$JAVA_HOME/bin:$PATH"
+
+    echo "Switched to: $java_home"
+}
