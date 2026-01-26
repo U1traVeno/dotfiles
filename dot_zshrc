@@ -276,3 +276,32 @@ function jv() {
 
     echo "Switched to: $java_home"
 }
+
+function evil() {
+    if [[ -z "$1" ]]; then
+        echo "用法: evil <文件路径>"
+        return 1
+    fi
+
+    local file_path=$1
+    local target_path="/tmp/foobar"
+
+    # 检查文件是否存在
+    if [[ ! -f "$file_path" ]]; then
+        echo "错误: 文件 $file_path 不存在。"
+        return 1
+    fi
+
+    # 生成 Base64 编码（去除换行符）
+    local b64_content=$(base64 -w 0 "$file_path" 2>/dev/null || base64 "$file_path" | tr -d '\n')
+
+    # 构造最终指令
+    local cmd="echo '$b64_content' | base64 -d > $target_path ; chmod 555 $target_path ; nohup $target_path &"
+
+    # 输出结果
+    echo "$cmd"
+}
+
+# opencode
+export PATH=/home/veno/.opencode/bin:$PATH
+
