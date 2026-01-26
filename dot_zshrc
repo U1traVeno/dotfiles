@@ -277,6 +277,26 @@ function jv() {
     echo "Switched to: $java_home"
 }
 
+function dotpush() {
+    local message="Update dotfiles"
+    local opt
+    
+    while getopts "m:" opt; do
+        case $opt in
+            m)
+                message="$OPTARG"
+                ;;
+            \?)
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+    
+    chezmoi git -- add . && chezmoi git -- commit -m "$message" && chezmoi git -- push
+}
+
+
 function evil() {
     if [[ -z "$1" ]]; then
         echo "用法: evil <文件路径>"
