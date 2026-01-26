@@ -158,6 +158,9 @@ export PATH="/opt/homebrew/opt/zip/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PAT
 export DOCKER_BUILDKIT=1
 export EDITOR="nvim"
 
+# opencode
+export PATH=/home/veno/.opencode/bin:$PATH
+
 function mphp() {
     local port=8000
     local recursive=false
@@ -322,6 +325,50 @@ function evil() {
     echo "$cmd"
 }
 
-# opencode
-export PATH=/home/veno/.opencode/bin:$PATH
+# 生成 1 像素图片的函数
+# 用法: genpix <格式> (例如: genpix png, genpix jpg)
+genpix() {
+    local format=$1
+    if [[ -z "$format" ]]; then
+        echo "用法: genpix <format> (例如: png, jpg, gif)" >&2
+        return 1
+    fi
+
+    # 使用 ImageMagick 创建 1x1 像素的透明(或白色)图片
+    # -size 1x1: 尺寸
+    # canvas:white: 白色画布
+    # fd:1: 输出到标准输出 (stdout)
+    magick -size 1x1 canvas:white "${format}:fd:1"
+}
+
+# 增强版的 imgfuse，支持从标准输入读取图片
+imgfuse() {
+    # 如果没有参数且没有管道输入，显示用法
+    if [[ $# -lt 1 ]]; then
+        echo "用法 1 (管道): genpix png | imgfuse <木马路径> [输出名]"
+        echo "用法 2 (文件): imgfuse <图片路径> <木马路径> [输出名]"
+        return 1
+    fi
+
+    local shell_in
+    local output
+    local temp_img="/tmp/tmp_pix_$(date +%s)"
+
+    if [[ -p /dev/stdin ]]; then
+        # 处理管道输入 (例如 genpix 传过来的数据)
+        shell_in=$1
+        output=${2:-"fused_payload"}
+        cat > "$temp_img"
+        cat "$temp_img" "$shell_in" > "$output"
+        rm "$temp_img"
+    else
+        # 处理传统文件输入
+        local img_in=$1
+        shell_in=$2
+        output=${3:-"fused_${img_in}"}
+        cat "$img_in" "$shell_in" > "$output"
+    fi
+
+    echo "✅ 注入完成! 输出文件: $output" >&2
+}
 
