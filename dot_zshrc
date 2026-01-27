@@ -152,14 +152,17 @@ function y() {
 alias lg=lazygit
 alias t=tmux
 alias tai=tmuxai
+alias fd=fdfind
 
 # exports
 export PATH="/opt/homebrew/opt/zip/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 export DOCKER_BUILDKIT=1
 export EDITOR="nvim"
 
+
 # opencode
 export PATH=/home/veno/.opencode/bin:$PATH
+export PATH=$PATH:$(go env GOPATH)/bin
 
 function mphp() {
     local port=8000
@@ -371,4 +374,9 @@ imgfuse() {
 
     echo "✅ 注入完成! 输出文件: $output" >&2
 }
+
+
+
+# Generated for pdtm. Do not edit.
+export PATH=$PATH:/home/veno/.pdtm/go/bin
 
