@@ -1,0 +1,14 @@
+zmodule environment
+zmodule input
+zmodule termtitle
+zmodule fzf
+zmodule Aloxaf/fzf-tab
+
+zmodule duration-info
+zmodule git-info
+zmodule romkatv/powerlevel10k --use degit
+
+zmodule zdharma-continuum/fast-syntax-highlighting
+zmodule completion
+zmodule zsh-users/zsh-history-substring-search
+zmodule zsh-users/zsh-autosuggestions
