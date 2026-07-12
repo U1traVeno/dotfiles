@@ -3,7 +3,9 @@
   programs.zsh = {
     enable = true;
     autocd = true;
-    enableCompletion = true;
+    # Zim's completion module owns compinit; running Home Manager's setup too
+    # initializes completion twice.
+    enableCompletion = false;
     history = {
       expireDuplicatesFirst = true;
       ignoreAllDups = true;
