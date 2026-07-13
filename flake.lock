@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "cc-switch-cli": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783940411,
+        "narHash": "sha256-cTwxuLCqV/JZqSnev2c647AOZRy0D8nBXOgQJrcBMGY=",
+        "owner": "SaladDay",
+        "repo": "cc-switch-cli",
+        "rev": "91ef1e5bbb435274b9f49f90ca7e58f5f61a3885",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SaladDay",
+        "repo": "cc-switch-cli",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -38,6 +58,7 @@
     },
     "root": {
       "inputs": {
+        "cc-switch-cli": "cc-switch-cli",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs"
       }
