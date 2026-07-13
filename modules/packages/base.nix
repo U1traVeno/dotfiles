@@ -6,5 +6,6 @@
     git
     jq
     zimfw
+    neovim
   ];
 }
