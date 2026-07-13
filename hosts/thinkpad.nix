@@ -3,7 +3,6 @@
   imports = [
     ../modules/shell
     ../modules/packages/base.nix
-    ../modules/packages/lark-cli.nix
     ../modules/packages/modern-unix.nix
     ../modules/packages/modern-tui.nix
     ../modules/packages/agents.nix
