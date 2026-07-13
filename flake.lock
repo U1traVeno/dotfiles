@@ -3,6 +3,7 @@
     "cc-switch-cli": {
       "inputs": {
         "nixpkgs": [
+          "external-packages",
           "nixpkgs"
         ]
       },
@@ -19,6 +20,23 @@
         "repo": "cc-switch-cli",
         "type": "github"
       }
+    },
+    "external-packages": {
+      "inputs": {
+        "cc-switch-cli": "cc-switch-cli",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "./packages/external",
+        "type": "path"
+      },
+      "original": {
+        "path": "./packages/external",
+        "type": "path"
+      },
+      "parent": []
     },
     "home-manager": {
       "inputs": {
@@ -58,7 +76,7 @@
     },
     "root": {
       "inputs": {
-        "cc-switch-cli": "cc-switch-cli",
+        "external-packages": "external-packages",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs"
       }

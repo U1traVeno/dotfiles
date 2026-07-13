@@ -9,24 +9,27 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    cc-switch-cli = {
-      url = "github:SaladDay/cc-switch-cli";
+    external-packages = {
+      url = "path:./packages/external";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, home-manager, cc-switch-cli, ... }:
+  outputs = inputs@{ nixpkgs, home-manager, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
-        overlays = [ (import ./packages) ];
+        overlays = [
+          (import ./packages {
+            externalPackages = inputs.external-packages;
+          })
+        ];
       };
     in {
       homeConfigurations."veno@thinkpad" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs = { inherit cc-switch-cli; };
         modules = [ ./hosts/thinkpad.nix ];
       };
     };

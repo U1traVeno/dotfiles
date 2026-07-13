@@ -1,8 +1,8 @@
-{ pkgs, cc-switch-cli, ... }:
+{ pkgs, ... }:
 {
   home.packages = with pkgs; [
     btop
-    cc-switch-cli.packages.${pkgs.system}.cc-switch-cli
+    cc-switch-cli
     gitui
     lazydocker
     lazygit
