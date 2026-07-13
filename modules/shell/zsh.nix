@@ -16,6 +16,7 @@
     shellAliases = {
       lg = "lazygit";
       t = "tmux";
+      l = "ls -lha";
     };
 
     initContent = ''
