@@ -2,6 +2,7 @@
 {
   imports = [
     ../modules/shell
+    ../modules/node.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
     ../modules/packages/modern-tui.nix
