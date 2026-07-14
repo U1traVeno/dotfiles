@@ -8,6 +8,8 @@
       url = "github:SaladDay/cc-switch-cli";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs = inputs@{ self, nixpkgs, ... }:
