@@ -7,6 +7,8 @@
     ../modules/packages/modern-unix.nix
     ../modules/packages/modern-tui.nix
     ../modules/packages/agents.nix
+    ../modules/packages/python.nix
+    ../modules/packages/golang.nix
   ];
 
   home = {
