@@ -8,4 +8,8 @@
     zimfw
     neovim
   ];
+
+  home.sessionPath = [
+    "$HOME/.local/bin"
+  ];
 }
