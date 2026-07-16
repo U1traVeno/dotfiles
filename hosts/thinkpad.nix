@@ -10,6 +10,7 @@
     ../modules/packages/node.nix
     ../modules/packages/python.nix
     ../modules/packages/golang.nix
+    ../modules/packages/compilers.nix
     ../modules/services/frp.nix
   ];
 
