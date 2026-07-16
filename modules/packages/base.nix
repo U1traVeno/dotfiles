@@ -7,6 +7,7 @@
     jq
     zimfw
     neovim
+    frp
   ];
 
   home.sessionPath = [
