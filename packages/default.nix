@@ -7,5 +7,4 @@ let
 in
 externalPackages.packages.${system}
 // {
-  lark-cli = final.callPackage ./lark-cli.nix { };
 }

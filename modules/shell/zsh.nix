@@ -17,6 +17,7 @@
       lg = "lazygit";
       t = "tmux";
       l = "ls -lha";
+      hm = "home-manager";
     };
 
     initContent = ''

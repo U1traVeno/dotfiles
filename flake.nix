@@ -30,7 +30,12 @@
     in {
       homeConfigurations."veno@thinkpad" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        modules = [ ./hosts/thinkpad.nix ];
+        modules = [ ./hosts/thinkpad-veno.nix ];
+      };
+
+      homeConfigurations."hermes@thinkpad" = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        modules = [ ./hosts/thinkpad-hermes.nix ];
       };
     };
 }
