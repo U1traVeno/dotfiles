@@ -9,7 +9,7 @@ directories, not as a disposable package list.
 - `flake.nix` exports Home Manager configurations as `<user>@<host>`.
 - `hosts/thinkpad-veno.nix` composes the environment for `/home/veno`.
 - `hosts/thinkpad-hermes.nix` currently composes the environment for the
-  `/home/hermes` account on this ThinkPad.
+  `/home/hermes-fp` account on this ThinkPad.
 - `modules/packages/` contains reusable package groups.
 - `modules/shell/` contains interactive shell configuration.
 - `packages/` contains packages maintained by this repository.
@@ -90,9 +90,9 @@ nix --extra-experimental-features 'nix-command flakes' \
 ```
 
 For the current ThinkPad deployment, the concrete output is
-`hermes@thinkpad`. A future `hermes-fp` account must receive its own host module
-and output, for example `hermes-fp@thinkpad`; it must not apply
-`hermes@thinkpad` and then patch the generated home by hand.
+`hermes-fp@thinkpad`. Every future `hermes-<scope>` account must receive its own
+host module and output; it must not apply another Agent account's configuration
+and then patch the generated home by hand.
 
 ## Mode 2: Helping a user manage that user's HOME
 

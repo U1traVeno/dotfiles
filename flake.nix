@@ -33,7 +33,7 @@
         modules = [ ./hosts/thinkpad-veno.nix ];
       };
 
-      homeConfigurations."hermes@thinkpad" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations."hermes-fp@thinkpad" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ ./hosts/thinkpad-hermes.nix ];
       };

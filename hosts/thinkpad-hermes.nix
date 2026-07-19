@@ -8,8 +8,8 @@
   ];
 
   home = {
-    username = "hermes";
-    homeDirectory = "/home/hermes";
+    username = "hermes-fp";
+    homeDirectory = "/home/hermes-fp";
     stateVersion = "26.05";
   };
 
