@@ -37,5 +37,10 @@
         inherit pkgs;
         modules = [ ./hosts/thinkpad-hermes.nix ];
       };
+
+      homeConfigurations."hermes-d@thinkpad" = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        modules = [ ./hosts/thinkpad-hermes-d.nix ];
+      };
     };
 }
