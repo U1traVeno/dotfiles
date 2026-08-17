@@ -10,6 +10,7 @@
   ];
 
   home.sessionPath = [
+    "$HOME/.nix-profile/bin"
     "$HOME/.local/bin"
   ];
 }
