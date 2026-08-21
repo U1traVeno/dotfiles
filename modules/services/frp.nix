@@ -1,5 +1,12 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
+  # systemd.user.enable defaults to false off Linux, so without this assertion
+  # importing this module on darwin evaluates and builds cleanly while the
+  # service silently never exists. Fail loudly instead.
+  assertions = [
+    (lib.hm.assertions.assertPlatform "services.frp" pkgs lib.platforms.linux)
+  ];
+
   home.packages = [ pkgs.frp ];
 
   systemd.user.services.frpc = {

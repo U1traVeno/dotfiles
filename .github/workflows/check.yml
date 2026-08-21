@@ -1,0 +1,91 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast gate. `nix flake check --all-systems` instantiates every host for
+  # every platform without building, so a Linux runner catches a broken
+  # aarch64-darwin host and vice versa. This is the job that stops a change
+  # made on one machine from silently breaking the other.
+  eval:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Evaluate every host for every platform
+        run: nix flake check --all-systems --print-build-logs
+
+      # Derive the build matrix from the flake itself so that adding a host to
+      # the `hosts` table in flake.nix automatically gets CI coverage.
+      - name: Derive build matrix
+        id: matrix
+        run: |
+          set -euo pipefail
+          matrix="$(nix flake show --json --all-systems | jq -c '
+            [ .checks | to_entries[] as $s | $s.value | keys[] | {
+                system: $s.key,
+                name: .,
+                runner: ({
+                  "x86_64-linux":   "ubuntu-latest",
+                  "aarch64-linux":  "ubuntu-24.04-arm",
+                  "aarch64-darwin": "macos-latest",
+                  "x86_64-darwin":  "macos-13"
+                }[$s.key])
+            } ]')"
+
+          if [ "$(jq 'map(select(.runner == null)) | length' <<<"$matrix")" != "0" ]; then
+            echo "::error::no GitHub runner mapped for: $(jq -c 'map(select(.runner == null) | .system) | unique' <<<"$matrix")"
+            exit 1
+          fi
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          jq . <<<"$matrix"
+
+  # Real builds. Evaluation cannot catch compile failures, so each host is
+  # actually built on a runner of its own architecture.
+  build:
+    needs: eval
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.eval.outputs.matrix) }}
+    name: build ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # GitHub can change what `macos-latest` and friends resolve to. Fail with
+      # a clear message instead of a confusing cross-compilation error.
+      - name: Verify runner architecture
+        run: |
+          set -euo pipefail
+          actual="$(nix eval --impure --raw --expr builtins.currentSystem)"
+          if [ "$actual" != "${{ matrix.system }}" ]; then
+            echo "::error::runner ${{ matrix.runner }} is $actual, expected ${{ matrix.system }}"
+            exit 1
+          fi
+
+      - name: Build ${{ matrix.name }}
+        run: |
+          nix build --print-build-logs \
+            '.#checks.${{ matrix.system }}.${{ matrix.name }}'
