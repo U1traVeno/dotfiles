@@ -11,14 +11,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Fast gate. `nix flake check --all-systems` instantiates every host for
-  # every platform without building, so a Linux runner catches a broken
-  # aarch64-darwin host and vice versa. This is the job that stops a change
-  # made on one machine from silently breaking the other.
+  # Sanity gate, not a build farm. Every host is instantiated for its own
+  # platform from a single Linux runner, which catches the mistakes that
+  # actually happen when editing from the wrong machine: bad option names,
+  # missing or renamed packages, packages unsupported on the target platform
+  # and failed module assertions.
+  #
+  # Deliberately evaluation-only. `nix flake check` would really build the
+  # x86_64-linux homes on this runner, which takes many minutes and duplicates
+  # what happens anyway on `home-manager switch`. Compile failures are not
+  # this workflow's job.
   eval:
+    name: evaluate all hosts
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
 
@@ -27,65 +33,27 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: Evaluate every host for every platform
-        run: nix flake check --all-systems --print-build-logs
-
-      # Derive the build matrix from the flake itself so that adding a host to
-      # the `hosts` table in flake.nix automatically gets CI coverage.
-      - name: Derive build matrix
-        id: matrix
+      - name: Instantiate every host
         run: |
           set -euo pipefail
-          matrix="$(nix flake show --json --all-systems | jq -c '
-            [ .checks | to_entries[] as $s | $s.value | keys[] | {
-                system: $s.key,
-                name: .,
-                runner: ({
-                  "x86_64-linux":   "ubuntu-latest",
-                  "aarch64-linux":  "ubuntu-24.04-arm",
-                  "aarch64-darwin": "macos-latest",
-                  "x86_64-darwin":  "macos-13"
-                }[$s.key])
-            } ]')"
+          hosts="$(nix eval --json '.#homeConfigurations' \
+            --apply builtins.attrNames | jq -r '.[]')"
 
-          if [ "$(jq 'map(select(.runner == null)) | length' <<<"$matrix")" != "0" ]; then
-            echo "::error::no GitHub runner mapped for: $(jq -c 'map(select(.runner == null) | .system) | unique' <<<"$matrix")"
+          if [ -z "$hosts" ]; then
+            echo "::error::no homeConfigurations found"
             exit 1
           fi
 
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          jq . <<<"$matrix"
-
-  # Real builds. Evaluation cannot catch compile failures, so each host is
-  # actually built on a runner of its own architecture.
-  build:
-    needs: eval
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.eval.outputs.matrix) }}
-    name: build ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-
-      # GitHub can change what `macos-latest` and friends resolve to. Fail with
-      # a clear message instead of a confusing cross-compilation error.
-      - name: Verify runner architecture
-        run: |
-          set -euo pipefail
-          actual="$(nix eval --impure --raw --expr builtins.currentSystem)"
-          if [ "$actual" != "${{ matrix.system }}" ]; then
-            echo "::error::runner ${{ matrix.runner }} is $actual, expected ${{ matrix.system }}"
-            exit 1
-          fi
-
-      - name: Build ${{ matrix.name }}
-        run: |
-          nix build --print-build-logs \
-            '.#checks.${{ matrix.system }}.${{ matrix.name }}'
+          status=0
+          for host in $hosts; do
+            echo "::group::$host"
+            if drv="$(nix eval --raw \
+                ".#homeConfigurations.\"$host\".activationPackage.drvPath")"; then
+              echo "$host -> $drv"
+            else
+              echo "::error::$host failed to evaluate"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"

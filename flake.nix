@@ -61,12 +61,21 @@
       homeConfigurations =
         builtins.mapAttrs (_: h: mkHome h.system h.module) hosts;
 
-      # Exposes each home as a flake check so that `nix flake check
-      # --all-systems` evaluates every host from any machine, including the
-      # Linux ones from macOS. Evaluation instantiates the derivation without
-      # building it, which catches bad option names, missing packages and
-      # platform-unsupported packages. It does NOT catch compile failures or
-      # modules that silently no-op on the wrong platform.
+      # Exposes each home as a flake check, which is what gives `nix flake
+      # check --all-systems` something to validate and provides a stable
+      # attribute for really building one host:
+      #
+      #   nix build .#checks.x86_64-linux.home-veno-thinkpad
+      #
+      # Note that `nix flake check` only evaluates checks for other systems but
+      # actually builds the ones matching the current system, so it is slow on
+      # a cold store. CI therefore instantiates homeConfigurations directly
+      # instead; see .github/workflows/check.yml.
+      #
+      # Evaluation catches bad option names, missing packages, packages
+      # unsupported on the target platform and failed assertions. It does NOT
+      # catch compile failures, nor a module that silently no-ops on the wrong
+      # platform unless that module asserts its platform explicitly.
       checks = lib.genAttrs systems (system:
         lib.mapAttrs'
           (name: _: lib.nameValuePair
