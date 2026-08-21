@@ -17,6 +17,9 @@
 #                                    cc-switch-cli is used as a GUI app here
 {
   imports = [
+    # NOTE: shell/zsh.nix is not imported here, so Home Manager cannot install
+    # direnv's zsh hook. ~/.zshrc sources it by hand until that changes.
+    ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
     ../modules/packages/modern-tui.nix
