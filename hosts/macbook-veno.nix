@@ -13,11 +13,13 @@
 #   modules/packages/compilers.nix - gcc is not a usable toolchain on darwin
 #   modules/shell/zsh.nix          - would take over ~/.zshrc (zim + p10k)
 #   modules/shell/tmux.nix         - would take over the tmux config
-#   modules/packages/agents.nix    - external flakes not verified on darwin
+#   modules/packages/agents.nix    - external flakes not verified on darwin, and
+#                                    cc-switch-cli is used as a GUI app here
 {
   imports = [
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
+    ../modules/packages/modern-tui.nix
   ];
 
   home = {
