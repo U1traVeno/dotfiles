@@ -10,7 +10,11 @@
 #
 # Deliberately not imported yet:
 #   modules/services/frp.nix       - systemd user service, Linux only
-#   modules/packages/compilers.nix - gcc is not a usable toolchain on darwin
+#   modules/packages/compilers.nix - gcc is not a usable toolchain on darwin;
+#                                    /usr/bin/cc from the Xcode CLT links here
+#   modules/packages/node.nix      - would replace ~/.npmrc, which holds an npm
+#                                    auth token, and would move the npm prefix
+#                                    away from the currently installed globals
 #   modules/shell/zsh.nix          - would take over ~/.zshrc (zim + p10k)
 #   modules/shell/tmux.nix         - would take over the tmux config
 #   modules/packages/agents.nix    - external flakes not verified on darwin, and
@@ -23,6 +27,9 @@
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
     ../modules/packages/modern-tui.nix
+    ../modules/packages/python.nix
+    ../modules/packages/golang.nix
+    ../modules/packages/rust.nix
   ];
 
   home = {
