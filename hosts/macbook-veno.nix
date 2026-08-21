@@ -12,9 +12,11 @@
 #   modules/services/frp.nix       - systemd user service, Linux only
 #   modules/packages/compilers.nix - gcc is not a usable toolchain on darwin;
 #                                    /usr/bin/cc from the Xcode CLT links here
-#   modules/packages/node.nix      - would replace ~/.npmrc, which holds an npm
-#                                    auth token, and would move the npm prefix
-#                                    away from the currently installed globals
+#   modules/packages/node.nix      - Node stays with Homebrew on this host by
+#                                    decision. The module manages ~/.npmrc,
+#                                    which here holds an npm auth token, and it
+#                                    would repoint the npm prefix away from the
+#                                    globals installed under the brew prefix.
 #   modules/shell/zsh.nix          - would take over ~/.zshrc (zim + p10k)
 #   modules/shell/tmux.nix         - would take over the tmux config
 #   modules/packages/agents.nix    - external flakes not verified on darwin, and

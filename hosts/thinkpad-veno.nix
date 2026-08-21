@@ -12,6 +12,7 @@
     ../modules/packages/agents.nix
     ../modules/packages/python.nix
     ../modules/packages/golang.nix
+    ../modules/packages/rust.nix
     ../modules/packages/compilers.nix
     ../modules/packages/cli.nix
     ../modules/services/frp.nix
