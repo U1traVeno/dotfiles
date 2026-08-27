@@ -48,6 +48,16 @@
         rm -f -- "$tmp"
       }
 
+      # `dsh` boots its HMR plugin in-process, which needs Node's internal
+      # module loader — only reachable under `--expose-internals`. The
+      # upstream native fallback (node-addon-require-builtin) has no prebuilt
+      # for Node 24, and `--expose-internals` is rejected in NODE_OPTIONS,
+      # so re-launch the npm-installed bin under `node --expose-internals`.
+      dsh() {
+        local bin="''${commands[dsh]:-$HOME/.local/share/npm/bin/dsh}"
+        node --expose-internals "$bin" "$@"
+      }
+
       [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
     '';
   };
