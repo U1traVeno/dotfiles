@@ -1,0 +1,13 @@
+{
+  "providers": {
+    "deepseek": {
+      "baseUrl": "https://aws.paramer.top/v1"
+    },
+    "openai": {
+      "baseUrl": "https://aws.paramer.top/v1"
+    },
+    "anthropic": {
+      "baseUrl": "https://aws.paramer.top/"
+    }
+  }
+}

@@ -25,6 +25,7 @@
   imports = [
     # NOTE: shell/zsh.nix is not imported here, so Home Manager cannot install
     # direnv's zsh hook. ~/.zshrc sources it by hand until that changes.
+    ../modules/programs/pi-agent.nix
     ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix

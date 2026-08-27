@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ../modules/programs/pi-agent.nix
     ../modules/shell/zsh.nix
     ../modules/shell/tmux.nix
     ../modules/shell/direnv.nix
