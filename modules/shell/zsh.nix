@@ -48,6 +48,42 @@
         rm -f -- "$tmp"
       }
 
+      sm-add() {
+        if (( $# < 2 )); then
+          print -u2 'usage: sm-add PROFILE SOURCE [SKILLS-ADD-OPTION...]'
+          return 2
+        fi
+
+        local profile=$1 arg tmp
+        shift
+        for arg in "$@"; do
+          case $arg in
+            -g|--global|--global=*|-a|--agent|--agent=*|--all|--copy)
+              print -u2 "sm-add: unsupported skills add option: $arg"
+              return 2
+              ;;
+          esac
+        done
+
+        tmp=$(mktemp -d "''${TMPDIR:-/tmp}/sm-add.XXXXXXXX") || return 1
+        {
+          (
+            cd "$tmp" &&
+              command npx --yes skills add "$@" --agent universal --yes
+          ) || return
+          command sm import \
+            --profile "$profile" \
+            --from "$tmp/.agents/skills" \
+            --replace || return
+          if ! command sm apply; then
+            print -u2 "sm-add: imported into profile $profile, but sm apply failed"
+            return 1
+          fi
+        } always {
+          command rm -rf -- "$tmp"
+        }
+      }
+
       # `dsh` boots its HMR plugin in-process, which needs Node's internal
       # module loader — only reachable under `--expose-internals`. The
       # upstream native fallback (node-addon-require-builtin) has no prebuilt
