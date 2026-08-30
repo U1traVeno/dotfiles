@@ -48,4 +48,9 @@ in
     force = true;
     source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/models.json";
   };
+
+  home.file.".pi/agent/extensions/shift-enter.ts" = {
+    force = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/shift-enter.ts";
+  };
 }
