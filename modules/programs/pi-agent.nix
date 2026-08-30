@@ -53,4 +53,14 @@ in
     force = true;
     source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/shift-enter.ts";
   };
+
+  home.file.".pi/agent/extensions/goal" = {
+    force = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/goal";
+  };
+
+  home.file.".pi/agent/goal.json" = {
+    force = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/goal.json";
+  };
 }
