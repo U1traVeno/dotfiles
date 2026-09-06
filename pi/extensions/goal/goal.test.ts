@@ -13,6 +13,7 @@ import {
   evolveGoalState,
   makeContinuationToken,
   reconstructGoalState,
+  shouldExposeGoalTools,
   validateObjective,
 } from "./state.ts";
 
@@ -22,6 +23,16 @@ test("objective validation trims boundaries and enforces the Unicode character l
   assert.equal(validateObjective("x".repeat(MAX_OBJECTIVE_CHARS)).ok, true);
   assert.equal(validateObjective("😀".repeat(MAX_OBJECTIVE_CHARS)).ok, true);
   assert.equal(validateObjective("x".repeat(MAX_OBJECTIVE_CHARS + 1)).ok, false);
+});
+
+test("goal tools are exposed only while a non-complete goal exists", () => {
+  assert.equal(shouldExposeGoalTools(null), false);
+
+  const goal = createGoalState("goal-1", "finish", 100);
+  for (const status of ["active", "paused", "blocked", "usage_limited"] as const) {
+    assert.equal(shouldExposeGoalTools(evolveGoalState(goal, { status }, 101)), true);
+  }
+  assert.equal(shouldExposeGoalTools(evolveGoalState(goal, { status: "complete" }, 101)), false);
 });
 
 test("model terminal transitions require an active goal and enforce the blocked run threshold", () => {

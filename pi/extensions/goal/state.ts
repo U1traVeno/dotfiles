@@ -125,6 +125,10 @@ export function canLaunchContinuation(state: GoalState | null, token: Continuati
   return state?.status === "active" && state.id === token.goalId && state.generation === token.generation;
 }
 
+export function shouldExposeGoalTools(state: GoalState | null): boolean {
+  return state !== null && state.status !== "complete";
+}
+
 export function canModelUpdateGoal(state: GoalState | null, status: ModelGoalStatus): { ok: boolean; error?: string } {
   if (!state) return { ok: false, error: "Cannot update goal because this session has no goal." };
   if (state.status !== "active") {

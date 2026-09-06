@@ -31,6 +31,7 @@ import {
   evolveGoalState,
   makeContinuationToken,
   reconstructGoalState,
+  shouldExposeGoalTools,
   validateObjective,
   type ContinuationToken,
   type GoalState,
@@ -42,6 +43,7 @@ import {
 
 const GOAL_STATUS_KEY = "goal";
 const GOAL_TOOL_NAMES = ["get_goal", "create_goal", "update_goal"] as const;
+const GOAL_TOOL_NAME_SET: ReadonlySet<string> = new Set(GOAL_TOOL_NAMES);
 const HIDDEN_TRANSITIONS = new Set(["retry", "progress", "intervention"]);
 
 interface LogicalGoalRun {
@@ -126,14 +128,19 @@ export default function goalExtension(pi: ExtensionAPI): void {
     return result;
   }
 
-  function ensureGoalToolsActive(): void {
+  function syncGoalToolsVisibility(): void {
     const active = pi.getActiveTools();
-    const next = [...new Set([...active, ...GOAL_TOOL_NAMES])];
-    if (next.length !== active.length) pi.setActiveTools(next);
+    const next = shouldExposeGoalTools(goal)
+      ? [...new Set([...active, ...GOAL_TOOL_NAMES])]
+      : active.filter((name) => !GOAL_TOOL_NAME_SET.has(name));
+    if (next.length !== active.length || next.some((name, index) => name !== active[index])) {
+      pi.setActiveTools(next);
+    }
   }
 
   function persist(next: GoalState | null, transition: GoalTransition): void {
     goal = next ? { ...next } : null;
+    syncGoalToolsVisibility();
     pi.appendEntry<GoalStateEntryData>(GOAL_STATE_ENTRY, {
       version: GOAL_STATE_VERSION,
       state: goal ? { ...goal } : null,
@@ -529,8 +536,8 @@ export default function goalExtension(pi: ExtensionAPI): void {
     continuationQueued = false;
     invalidateScheduledWork();
     await loadConfig(ctx);
-    ensureGoalToolsActive();
     goal = reconstructGoalState(ctx.sessionManager.getBranch());
+    syncGoalToolsVisibility();
 
     unsubscribeTerminalInput?.();
     unsubscribeTerminalInput = undefined;
@@ -685,6 +692,7 @@ export default function goalExtension(pi: ExtensionAPI): void {
     exclusive(() => {
       invalidateScheduledWork();
       goal = reconstructGoalState(ctx.sessionManager.getBranch());
+      syncGoalToolsVisibility();
       if (goal?.status === "active") {
         const next = evolveGoalState(goal, { status: "paused", retrySequence: 0 });
         persist(next, {
