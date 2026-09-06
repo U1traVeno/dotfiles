@@ -25,6 +25,9 @@ test("objective validation trims boundaries and enforces the Unicode character l
   assert.equal(validateObjective("x".repeat(MAX_OBJECTIVE_CHARS + 1)).ok, false);
 });
 
+// Hiding every goal tool when no goal exists is only correct because goals are
+// created solely by the /goal command. Re-registering a model-facing creation
+// tool would make it unreachable in exactly the states where it applies.
 test("goal tools are exposed only while a non-complete goal exists", () => {
   assert.equal(shouldExposeGoalTools(null), false);
 

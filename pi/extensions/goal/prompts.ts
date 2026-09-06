@@ -22,9 +22,6 @@ Stop relying on the previous objective. Call get_goal now to read the current ob
 
 Do not call update_goal unless the updated goal is actually complete or the strict blocked audit is satisfied.`;
 
-export const CREATE_GOAL_DESCRIPTION = `Create a goal only when explicitly requested by the user or system/developer instructions; do not infer goals from ordinary tasks.
-The objective is required and must describe the concrete outcome to pursue. Fails if an unfinished goal exists; use update_goal only for terminal status.`;
-
 export const GET_GOAL_DESCRIPTION =
   "Get the current goal for this Pi session branch, including status, completed goal runs, blocked-audit runs, and reconnect count.";
 

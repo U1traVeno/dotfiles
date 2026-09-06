@@ -14,7 +14,6 @@ import { Type } from "typebox";
 
 import { DEFAULT_GOAL_CONFIG, loadGoalConfig, type GoalConfig } from "./config.ts";
 import {
-  CREATE_GOAL_DESCRIPTION,
   GET_GOAL_DESCRIPTION,
   GOAL_CONTINUATION_TRIGGER,
   OBJECTIVE_UPDATED_STEERING,
@@ -42,7 +41,9 @@ import {
 } from "./state.ts";
 
 const GOAL_STATUS_KEY = "goal";
-const GOAL_TOOL_NAMES = ["get_goal", "create_goal", "update_goal"] as const;
+// Goals are created only through the /goal command. Both model-facing tools
+// operate on an existing goal, so they follow its lifecycle.
+const GOAL_TOOL_NAMES = ["get_goal", "update_goal"] as const;
 const GOAL_TOOL_NAME_SET: ReadonlySet<string> = new Set(GOAL_TOOL_NAMES);
 const HIDDEN_TRANSITIONS = new Set(["retry", "progress", "intervention"]);
 
@@ -597,38 +598,6 @@ export default function goalExtension(pi: ExtensionAPI): void {
         content: [{ type: "text", text: JSON.stringify({ goal }, null, 2) }],
         details: { goal: goal ? { ...goal } : null },
       };
-    },
-  });
-
-  pi.registerTool({
-    name: "create_goal",
-    label: "Create Goal",
-    description: CREATE_GOAL_DESCRIPTION,
-    promptSnippet: "Create a persistent goal only when the user explicitly requests one",
-    parameters: Type.Object(
-      { objective: Type.String({ description: "The concrete objective to start pursuing" }) },
-      { additionalProperties: false },
-    ),
-    executionMode: "sequential",
-    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      if (ctx.mode !== "tui") throw new Error("Goals are supported only in interactive TUI mode.");
-      if (!ctx.sessionManager.isPersisted()) throw new Error("Goals require a persisted session.");
-      return exclusive(() => {
-        if (goal && goal.status !== "complete") {
-          throw new Error("Cannot create a new goal because this session has an unfinished goal.");
-        }
-        const validation = validateObjective(params.objective);
-        if (!validation.ok || !validation.objective) throw new Error(validation.error ?? "Invalid goal objective.");
-        invalidateScheduledWork();
-        const next = createGoalState(randomUUID(), validation.objective);
-        persist(next, { kind: "created", status: "active", objective: next.objective });
-        currentRun = { goalId: next.id, cancelledByControl: false };
-        updateStatus(ctx);
-        return {
-          content: [{ type: "text", text: `Goal created and active.\n\n${next.objective}` }],
-          details: { goal: { ...next } },
-        };
-      });
     },
   });
 
