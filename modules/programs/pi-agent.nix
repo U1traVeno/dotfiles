@@ -59,6 +59,11 @@ in
     source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/goal";
   };
 
+  home.file.".pi/agent/extensions/qiniu" = {
+    force = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/qiniu";
+  };
+
   home.file.".pi/agent/goal.json" = {
     force = true;
     source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/goal.json";
