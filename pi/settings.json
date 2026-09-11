@@ -7,7 +7,10 @@
   "packages": [
     "npm:pi-web-access",
     "npm:pi-exit",
-    "npm:pi-mcp-adapter"
+    "npm:pi-mcp-adapter",
+    "npm:pi-lens",
+    "npm:@aliou/pi-processes",
+    "npm:@jerryan/pi-subagent-lite"
   ],
   "enabledModels": [
     "deepseek/deepseek-flash",
