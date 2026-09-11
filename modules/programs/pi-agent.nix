@@ -69,6 +69,14 @@ in
     source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/openlux";
   };
 
+  # Local fork of @jerryan/pi-subagent-lite: the upstream version reported every
+  # failed child run as a successful "(no output)". Owned here rather than by npm
+  # so the fix cannot be overwritten by `pi update --extensions`.
+  home.file.".pi/agent/extensions/subagent" = {
+    force = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/extensions/subagent";
+  };
+
   home.file.".pi/agent/goal.json" = {
     force = true;
     source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/pi/goal.json";

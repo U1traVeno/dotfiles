@@ -9,8 +9,7 @@
     "npm:pi-exit",
     "npm:pi-mcp-adapter",
     "npm:pi-lens",
-    "npm:@aliou/pi-processes",
-    "npm:@jerryan/pi-subagent-lite"
+    "npm:@aliou/pi-processes"
   ],
   "enabledModels": [
     "anthropic/claude-opus-5",
