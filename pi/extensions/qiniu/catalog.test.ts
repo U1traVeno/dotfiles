@@ -1,7 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildCatalog, mapCatalogEntry, resolveMaxTokens, selectCatalogEntries } from "./catalog.ts";
+import {
+  buildCatalog,
+  mapCatalogEntry,
+  mapListedModel,
+  mergeCatalog,
+  modelCompat,
+  modelPagePath,
+  parseAvailableModels,
+  resolveMaxTokens,
+  selectCatalogEntries,
+  selectModelListEntries,
+  selectModelPageEntry,
+} from "./catalog.ts";
 
 function page(models: unknown): string {
   return `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
@@ -135,4 +147,83 @@ test("tolerates a payload whose model array is missing", () => {
 
 test("throws a clear error when the payload script is absent", () => {
   assert.throws(() => buildCatalog("<html></html>"), /__NEXT_DATA__ payload not found/);
+});
+
+test("reads the availability list envelope and drops unusable entries", () => {
+  const payload = {
+    object: "list",
+    data: [
+      { id: "deepseek/deepseek-v4.1-flash", object: "model", context_length: 1_000_000, max_tokens: 384_000 },
+      { object: "model" },
+      "junk",
+    ],
+  };
+  assert.deepEqual(
+    parseAvailableModels(payload).map((model) => model.id),
+    ["deepseek/deepseek-v4.1-flash"],
+  );
+  assert.equal(parseAvailableModels({ models: [{ id: "a" }] })[0]?.id, "a");
+  assert.deepEqual(selectModelListEntries(null), []);
+  assert.deepEqual(selectModelListEntries({}), []);
+});
+
+test("derives a fallback entry from the availability list", () => {
+  const model = mapListedModel({ id: "fresh/model", context_length: 1_000_000, max_tokens: 384_000 });
+  assert.equal(model?.name, "fresh/model");
+  assert.equal(model?.reasoning, false);
+  assert.deepEqual(model?.input, ["text"]);
+  assert.equal(model?.contextWindow, 1_000_000);
+  assert.equal(model?.maxTokens, 384_000);
+  assert.deepEqual(model?.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+  // Without a usable cap the derived value stays inside the catalog's bounds.
+  assert.equal(mapListedModel({ id: "bare" })?.maxTokens, 16_384);
+  assert.equal(mapListedModel({ context_length: 1_000_000 }), undefined);
+});
+
+test("reads a single-model marketplace page", () => {
+  const payload = {
+    props: { pageProps: { detailFailed: false, model: chatEntry({ id: "deepseek/deepseek-v4.1-flash" }) } },
+  };
+  assert.equal(selectModelPageEntry(payload)?.id, "deepseek/deepseek-v4.1-flash");
+  assert.equal(selectModelPageEntry({ props: { pageProps: { detailFailed: true } } }), undefined);
+  assert.equal(selectModelPageEntry(null), undefined);
+});
+
+test("refuses ids that cannot be used as a marketplace path", () => {
+  assert.equal(modelPagePath("deepseek/deepseek-v4.1-flash"), "deepseek/deepseek-v4.1-flash");
+  assert.equal(modelPagePath("qwen3-vl-30b-a3b-thinking"), "qwen3-vl-30b-a3b-thinking");
+  assert.equal(modelPagePath("../etc/passwd"), undefined);
+  assert.equal(modelPagePath("a/../b"), undefined);
+  assert.equal(modelPagePath("a//b"), undefined);
+  assert.equal(modelPagePath("a?x=1"), undefined);
+  assert.equal(modelPagePath(""), undefined);
+});
+
+test("merges backfilled models without displacing snapshot entries", () => {
+  const snapshot = mapCatalogEntry(chatEntry({ id: "z-ai/glm-5.3", name: "GLM-5.3" }))!;
+  const backfilled = mapListedModel({ id: "deepseek/deepseek-v4.1-flash" })!;
+  const merged = mergeCatalog([snapshot], [backfilled, mapListedModel({ id: "z-ai/glm-5.3" })!]);
+  assert.deepEqual(
+    merged.map((model) => model.id),
+    ["deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3"],
+  );
+  // The snapshot entry wins over a backfilled entry for the same id.
+  assert.equal(merged[1].name, "GLM-5.3");
+});
+
+test("addresses DeepSeek models in DeepSeek's own wire format", () => {
+  assert.deepEqual(modelCompat("deepseek/deepseek-v4.1-flash"), {
+    supportsDeveloperRole: false,
+    supportsStore: false,
+    maxTokensField: "max_tokens",
+    requiresReasoningContentOnAssistantMessages: true,
+    thinkingFormat: "deepseek",
+  });
+  // The fallback entry of a brand new DeepSeek model carries it too.
+  assert.equal(mapListedModel({ id: "deepseek/next" })?.compat.thinkingFormat, "deepseek");
+  assert.equal(mapCatalogEntry(chatEntry({ id: "deepseek-r1" }))?.compat.requiresReasoningContentOnAssistantMessages, true);
+  // Anything else keeps the conservative default.
+  assert.deepEqual(modelCompat("z-ai/glm-5.3"), { supportsDeveloperRole: false });
+  assert.deepEqual(mapCatalogEntry(chatEntry())?.compat, { supportsDeveloperRole: false });
+  assert.equal(mapListedModel({ id: "qwen3-235b-a22b" })?.compat.maxTokensField, undefined);
 });
