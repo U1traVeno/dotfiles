@@ -1,8 +1,8 @@
 {
   "lastChangelogVersion": "0.85.1",
   "theme": "dark",
-  "defaultProvider": "qiniu",
-  "defaultModel": "z-ai/glm-5.3",
+  "defaultProvider": "opencode-go",
+  "defaultModel": "deepseek-flash",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:pi-web-access",
@@ -13,11 +13,10 @@
     "npm:@jerryan/pi-subagent-lite"
   ],
   "enabledModels": [
-    "deepseek/deepseek-flash",
     "anthropic/claude-opus-5",
     "openai/gpt-6-astra",
     "openlux/gemini-3.8-flash",
     "anthropic/claude-fable-5-1",
-    "qiniu/deepseek/deepseek-v4.1-flash"
+    "opencode-go/deepseek-v4.1-flash"
   ]
 }
