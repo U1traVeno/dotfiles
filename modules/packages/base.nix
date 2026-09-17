@@ -14,6 +14,11 @@
 
   home.sessionPath = [
     "$HOME/.nix-profile/bin"
+    # Nix's own CLI (`nix`, `nix-build`, ...) lives in the system default
+    # profile, while `$HOME/.nix-profile` only holds the Home Manager profile.
+    # Without this, `home-manager` resolves but its internal `nix build` call
+    # fails with "nix: command not found".
+    "/nix/var/nix/profiles/default/bin"
     "$HOME/.local/bin"
   ];
 }
