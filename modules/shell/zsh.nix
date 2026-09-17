@@ -122,6 +122,11 @@
         }
 
         [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+        # Veno's personal wrappers. Kept as a shell file rather than a Nix
+        # string because the escaping required for this much shell is a
+        # maintenance hazard.
+        source "${config.home.homeDirectory}/.config/zsh/veno.zsh"
       ''
     ];
   };
@@ -129,5 +134,6 @@
   home.file = {
     ".zimrc".source = ../../config/zimrc;
     ".p10k.zsh".source = ../../config/p10k.zsh;
+    ".config/zsh/veno.zsh".source = ../../config/zsh/veno.zsh;
   };
 }

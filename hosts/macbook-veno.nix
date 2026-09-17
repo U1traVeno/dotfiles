@@ -1,4 +1,4 @@
-{ ... }:
+{ config, lib, ... }:
 # Incremental migration of /Users/veno on the Apple Silicon MacBook.
 #
 # Only modules that are known to work on aarch64-darwin and that do not fight
@@ -17,15 +17,22 @@
 #                                    which here holds an npm auth token, and it
 #                                    would repoint the npm prefix away from the
 #                                    globals installed under the brew prefix.
-#   modules/shell/zsh.nix          - would take over ~/.zshrc (zim + p10k)
 #   modules/shell/tmux.nix         - would take over the tmux config
 #   modules/packages/agents.nix    - external flakes not verified on darwin, and
 #                                    cc-switch-cli is used as a GUI app here
+#
+# modules/shell/zsh.nix owns ~/.zshrc, ~/.zshenv, ~/.zprofile, ~/.zimrc,
+# ~/.p10k.zsh and ~/.config/zsh/veno.zsh. The hand-written ~/.zshrc it replaces
+# is backed up by Home Manager as ~/.zshrc.backup on the first activation.
+#
+# chezmoi still owns ~/.config/nvim, ~/.config/yazi, ~/.config/opencode and
+# ~/.config/nuclei. It no longer manages ~/.zshrc or ~/.zimrc: both were dropped
+# from its source state with `chezmoi forget`, so that a `chezmoi apply` cannot
+# overwrite the symlinks Home Manager installs.
 {
   imports = [
-    # NOTE: shell/zsh.nix is not imported here, so Home Manager cannot install
-    # direnv's zsh hook. ~/.zshrc sources it by hand until that changes.
     ../modules/programs/pi-agent.nix
+    ../modules/shell/zsh.nix
     ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
@@ -39,6 +46,47 @@
     username = "veno";
     homeDirectory = "/Users/veno";
     stateVersion = "26.05";
+
+    # `cargo install` puts sm, derivon and mdbook here rather than in the nix
+    # profile, so this stays on PATH even though cargo itself comes from
+    # modules/packages/rust.nix.
+    sessionPath = [
+      "$HOME/.cargo/bin"
+      # Homebrew's zip is keg-only, and /etc/paths.d/homebrew only covers
+      # /opt/homebrew/bin.
+      "/opt/homebrew/opt/zip/bin"
+    ];
+
+    sessionVariables = {
+      EDITOR = "nvim";
+      DOCKER_BUILDKIT = "1";
+    };
+  };
+
+  programs.zsh = {
+    shellAliases = {
+      # Both of these come from Homebrew and are macOS-only.
+      tai = "tmuxai";
+      typora = "open -a typora";
+    };
+
+    # OrbStack's installer appended this stanza to ~/.zprofile, which Home
+    # Manager now owns and rewrites on every activation.
+    #
+    # The PATH line is not redundant. ~/.zshenv sources hm-session-vars.sh
+    # before /etc/zprofile runs path_helper, and hm-session-vars.sh applies only
+    # once per shell (__HM_SESS_VARS_SOURCED), so for a login shell the
+    # second sourcing from ~/.zprofile is a no-op. path_helper therefore gets
+    # the last word: it re-sorts PATH so that /usr/bin and /opt/homebrew/bin
+    # come before the nix profile, which silently swaps in the system git,
+    # python3, jq and zip. Re-assert the declared order after it; the
+    # `typeset -U path` that Home Manager emits in ~/.zshrc drops duplicates.
+    profileExtra = ''
+      export PATH="${lib.concatStringsSep ":" config.home.sessionPath}''${PATH:+:}$PATH"
+
+      # Added by OrbStack: command-line tools and integration
+      source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+    '';
   };
 
   programs.home-manager.enable = true;
