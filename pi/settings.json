@@ -2,20 +2,21 @@
   "lastChangelogVersion": "0.85.1",
   "theme": "dark",
   "defaultProvider": "opencode-go",
-  "defaultModel": "deepseek-flash",
+  "defaultModel": "deepseek-v4.1-flash",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:pi-web-access",
-    "npm:pi-exit",
     "npm:pi-mcp-adapter",
     "npm:pi-lens",
-    "npm:@aliou/pi-processes"
+    "npm:@aliou/pi-processes",
+    "npm:pi-cc-extensions"
   ],
   "enabledModels": [
-    "anthropic/claude-opus-5",
-    "openai/gpt-6-astra",
     "openlux/gemini-3.8-flash",
-    "anthropic/claude-fable-5-1",
-    "opencode-go/deepseek-v4.1-flash"
+    "opencode-go/deepseek-v4.1-flash",
+    "qiniu/stepfun/step-3.7-flash",
+    "qiniu/moonshotai/kimi-k3",
+    "qiniu/z-ai/glm-5.3",
+    "opencode-go/gpt-5.6-luna"
   ]
 }
