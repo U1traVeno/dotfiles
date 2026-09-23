@@ -3,7 +3,7 @@
   imports = [
     ../modules/programs/pi-agent.nix
     ../modules/shell/zsh.nix
-    ../modules/shell/tmux.nix
+    (import ../modules/shell/tmux.nix { dualPrefix = false; })
     ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/node.nix

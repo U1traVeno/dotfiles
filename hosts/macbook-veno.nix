@@ -37,7 +37,7 @@
   imports = [
     ../modules/programs/pi-agent.nix
     ../modules/shell/zsh.nix
-    ../modules/shell/tmux.nix
+    (import ../modules/shell/tmux.nix { })
     ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
