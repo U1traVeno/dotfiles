@@ -39,7 +39,7 @@
   imports = [
     ../modules/programs/pi-agent.nix
     ../modules/shell/zsh.nix
-    (import ../modules/shell/tmux.nix { })
+    ../modules/shell/tmux.nix
     ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
@@ -91,6 +91,12 @@
       DOCKER_BUILDKIT = "1";
     };
   };
+
+  # C-Space is this host's tmux prefix so that a bare Ctrl-b reaches the tmux
+  # on the far side of an SSH session instead of this one (the pairing is
+  # documented in modules/shell/tmux.nix). At tmux's default Ctrl-b nothing
+  # needs to be said at all -- see hosts/thinkpad-veno.nix.
+  programs.tmux.prefix = "C-Space";
 
   # yazi itself comes from modules/packages/modern-tui.nix; the config moved
   # here when chezmoi was retired (see the header comment).
