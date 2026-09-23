@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 # Incremental migration of /Users/veno on the Apple Silicon MacBook.
 #
 # Only modules that are known to work on aarch64-darwin and that do not fight
@@ -29,10 +29,12 @@
 # ~/.p10k.zsh and ~/.config/zsh/veno.zsh. The hand-written ~/.zshrc it replaces
 # is backed up by Home Manager as ~/.zshrc.backup on the first activation.
 #
-# chezmoi still owns ~/.config/nvim, ~/.config/yazi, ~/.config/opencode and
-# ~/.config/nuclei. It no longer manages ~/.zshrc or ~/.zimrc: both were dropped
-# from its source state with `chezmoi forget`, so that a `chezmoi apply` cannot
-# overwrite the symlinks Home Manager installs.
+# chezmoi is retired on this host. ~/.config/nvim stays its own git repository
+# (github.com/U1traVeno/nvim, outside this repo); yazi.toml is now managed here
+# from config/yazi/yazi.toml; ~/.config/opencode is deliberately local-only
+# because its opencode.json embeds provider API keys and must never be
+# committed anywhere. nuclei was dropped outright along with its template
+# store, as were the antsword formula and the ehole binary.
 {
   imports = [
     ../modules/programs/pi-agent.nix
@@ -45,12 +47,34 @@
     ../modules/packages/python.nix
     ../modules/packages/golang.nix
     ../modules/packages/rust.nix
+    ../modules/packages/cli.nix
+    ../modules/packages/media.nix
   ];
 
   home = {
     username = "veno";
     homeDirectory = "/Users/veno";
     stateVersion = "26.05";
+
+    # CLI set migrated out of Homebrew (the packages carry the same names as
+    # the brew formulae they replace; uninstall those after switching).
+    # sevenzip (7zz) deliberately stays with Homebrew: nixpkgs only has the
+    # older p7zip with different command names. gh, tea and ffmpeg arrive via
+    # the cli.nix/media.nix imports above, and the brew tmux and tree-sitter
+    # formulae are already shadowed by modules/shell/tmux.nix and
+    # modules/packages/base.nix.
+    packages = with pkgs; [
+      aria2
+      hugo
+      imagemagick
+      ncdu
+      nmap
+      tmuxai
+      tldr
+      tree
+      wget
+      yt-dlp
+    ];
 
     # `cargo install` puts sm, derivon and mdbook here rather than in the nix
     # profile, so this stays on PATH even though cargo itself comes from
@@ -67,6 +91,10 @@
       DOCKER_BUILDKIT = "1";
     };
   };
+
+  # yazi itself comes from modules/packages/modern-tui.nix; the config moved
+  # here when chezmoi was retired (see the header comment).
+  xdg.configFile."yazi/yazi.toml".source = ../config/yazi/yazi.toml;
 
   programs.zsh = {
     shellAliases = {
