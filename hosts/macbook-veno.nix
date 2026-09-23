@@ -17,9 +17,13 @@
 #                                    which here holds an npm auth token, and it
 #                                    would repoint the npm prefix away from the
 #                                    globals installed under the brew prefix.
-#   modules/shell/tmux.nix         - would take over the tmux config
 #   modules/packages/agents.nix    - external flakes not verified on darwin, and
 #                                    cc-switch-cli is used as a GUI app here
+#
+# modules/shell/tmux.nix owns ~/.config/tmux/tmux.conf and installs tmux from
+# nixpkgs, which shadows the Homebrew formula earlier on PATH. tmux prefers
+# ~/.config/tmux/tmux.conf over ~/.tmux.conf, so the hand-written ~/.tmux.conf
+# is no longer read once this is activated and can be dropped.
 #
 # modules/shell/zsh.nix owns ~/.zshrc, ~/.zshenv, ~/.zprofile, ~/.zimrc,
 # ~/.p10k.zsh and ~/.config/zsh/veno.zsh. The hand-written ~/.zshrc it replaces
@@ -33,6 +37,7 @@
   imports = [
     ../modules/programs/pi-agent.nix
     ../modules/shell/zsh.nix
+    ../modules/shell/tmux.nix
     ../modules/shell/direnv.nix
     ../modules/packages/base.nix
     ../modules/packages/modern-unix.nix
