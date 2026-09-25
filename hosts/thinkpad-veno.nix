@@ -23,6 +23,11 @@
     username = "veno";
     homeDirectory = "/home/veno";
     stateVersion = "26.05";
+
+    # `cargo install` puts binaries here rather than in the nix profile, so
+    # this stays on PATH even though cargo itself comes from
+    # modules/packages/rust.nix.
+    sessionPath = [ "$HOME/.cargo/bin" ];
   };
 
   programs.home-manager.enable = true;
