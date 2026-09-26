@@ -109,11 +109,19 @@
   #
   # ~/.ssh/config stays hand-written (it holds machine-local entries), so it
   # pulls this in with `Include ~/.ssh/clipbridge.conf` near its top, before
-  # any Host block. A second concurrent session just fails to bind the port
-  # with a warning while the first one keeps serving the same clipboard.
+  # any Host block.
+  #
+  # Only interactive shells (`sessiontype shell`, OpenSSH >= 10.0) ask for the
+  # forward, so rsync/scp/`ssh host cmd` never compete for the port. A second
+  # concurrent shell still fails to bind it while the first one keeps serving
+  # the same clipboard; that "remote port forwarding failed" notice is logged
+  # at INFO, so LogLevel ERROR silences it for these sessions. `originalhost`
+  # rather than `host`, because `thinkpad` and the old `fedora` share a
+  # HostName.
   home.file.".ssh/clipbridge.conf".text = ''
-    Host thinkpad thinkpad-local
+    Match originalhost thinkpad,thinkpad-local sessiontype shell
       RemoteForward 127.0.0.1:47851 localhost:22
+      LogLevel ERROR
   '';
 
   # yazi itself comes from modules/packages/modern-tui.nix; the config moved
