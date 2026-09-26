@@ -69,6 +69,8 @@
       imagemagick
       ncdu
       nmap
+      # Reads this Mac's clipboard image for clipbridge (see below).
+      pngpaste
       tmuxai
       tldr
       tree
@@ -97,6 +99,22 @@
   # documented in modules/shell/tmux.nix). At tmux's default Ctrl-b nothing
   # needs to be said at all -- see hosts/thinkpad-veno.nix.
   programs.tmux.prefix = "C-Space";
+
+  # clipbridge: lets Claude Code on the ThinkPad paste images from this Mac's
+  # clipboard. Every SSH session to the ThinkPad (`fedora`, reached through
+  # frp) forwards its 127.0.0.1:47851 back to this Mac's sshd, and the xclip
+  # stand-in there runs `pngpaste` / `pbpaste` here through it (see
+  # hosts/thinkpad-veno.nix). This needs Remote Login enabled and the
+  # ThinkPad's key in ~/.ssh/authorized_keys.
+  #
+  # ~/.ssh/config stays hand-written (it holds machine-local entries), so it
+  # pulls this in with `Include ~/.ssh/clipbridge.conf` near its top, before
+  # any Host block. A second concurrent session just fails to bind the port
+  # with a warning while the first one keeps serving the same clipboard.
+  home.file.".ssh/clipbridge.conf".text = ''
+    Host fedora
+      RemoteForward 127.0.0.1:47851 localhost:22
+  '';
 
   # yazi itself comes from modules/packages/modern-tui.nix; the config moved
   # here when chezmoi was retired (see the header comment).
