@@ -3,7 +3,10 @@
  *
  * OpenLux (https://api.openlux.ai) is a new-api style relay that speaks the
  * native Gemini protocol at the site root: `GET /v1alpha/models` lists the
- * models callable through `POST /v1alpha/models/{model}:generateContent`.
+ * Gemini models callable through `POST /v1alpha/models/{model}:generateContent`.
+ * Only Gemini ids are valid on that endpoint; the relay rejects OpenAI and
+ * Anthropic ids there, so those families are declared in CURATED_MODELS with
+ * their own `api` and `baseUrl` rather than being served natively.
  * Unlike the Qiniu marketplace page, this endpoint requires authentication
  * (`x-goog-api-key`), so `fetchOpenluxCatalog` takes the provider API key
  * resolved by index.ts.
@@ -58,9 +61,107 @@ const PLACEHOLDER_OUTPUT_LIMIT = 4_096;
 /** Multimodal Gemini chat families. */
 const IMAGE_INPUT_PATTERN = /gemini-(?:1\.5|2\.5|3)/i;
 
+/**
+ * Frontier OpenAI and Anthropic models offered through the relay.
+ *
+ * The Gemini heuristics above cannot infer these families, but the decisive
+ * problem is protocol: the relay does not serve them on the Gemini-native
+ * endpoint at all. A request for `claude-sonnet-5-5` against /v1alpha is
+ * rejected with "not a valid Gemini model for Gemini native API format". Each
+ * family therefore carries its own wire protocol and base path, per the
+ * relay's own tutorials (Claude Code uses the site root; Gemini CLI uses the
+ * native path; GPT is served under /v1). Per-model `api`/`baseUrl` override
+ * the provider-level Gemini default.
+ *
+ * Limits and modalities come from pi-ai's bundled provider data (openai.json /
+ * anthropic.json). Costs stay zero like every other entry.
+ */
+const OPENLUX_ANTHROPIC_BASE_URL = "https://api.openlux.ai";
+const OPENLUX_OPENAI_BASE_URL = "https://api.openlux.ai/v1";
+
+export interface CuratedModelMetadata {
+  name: string;
+  /** Protocol this family speaks on the relay; overrides the provider default. */
+  api: "anthropic-messages" | "openai-completions";
+  baseUrl: string;
+  reasoning: boolean;
+  input: ("text" | "image")[];
+  contextWindow: number;
+  maxTokens: number;
+}
+
+export const CURATED_MODELS: Readonly<Record<string, CuratedModelMetadata>> = {
+  "gpt-6-astra": {
+    name: "GPT-6 Astra",
+    api: "openai-completions",
+    baseUrl: OPENLUX_OPENAI_BASE_URL,
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 272_000,
+    maxTokens: 128_000,
+  },
+  "gpt-6.1-sol": {
+    name: "GPT-6.1 Sol",
+    api: "openai-completions",
+    baseUrl: OPENLUX_OPENAI_BASE_URL,
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 272_000,
+    maxTokens: 128_000,
+  },
+  "claude-opus-5-5": {
+    name: "Claude Opus 5.5",
+    api: "anthropic-messages",
+    baseUrl: OPENLUX_ANTHROPIC_BASE_URL,
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 1_000_000,
+    maxTokens: 128_000,
+  },
+  "claude-fable-5-1": {
+    name: "Claude Fable 5.1",
+    api: "anthropic-messages",
+    baseUrl: OPENLUX_ANTHROPIC_BASE_URL,
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 1_000_000,
+    maxTokens: 128_000,
+  },
+  "claude-sonnet-5-5": {
+    name: "Claude Sonnet 5.5",
+    api: "anthropic-messages",
+    baseUrl: OPENLUX_ANTHROPIC_BASE_URL,
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 1_000_000,
+    maxTokens: 128_000,
+  },
+  "claude-haiku-5-5": {
+    name: "Claude Haiku 5.5",
+    api: "anthropic-messages",
+    baseUrl: OPENLUX_ANTHROPIC_BASE_URL,
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 1_000_000,
+    maxTokens: 128_000,
+  },
+};
+
+function curatedFor(id: string): CuratedModelMetadata | undefined {
+  return Object.hasOwn(CURATED_MODELS, id) ? CURATED_MODELS[id] : undefined;
+}
+
 export interface OpenluxModel {
   id: string;
   name: string;
+  /**
+   * Per-model protocol and base path. Gemini models leave these unset and
+   * inherit the provider-level google-generative-ai endpoint; curated
+   * OpenAI/Anthropic families must override both, because the relay rejects
+   * them on the Gemini-native path.
+   */
+  api?: string;
+  baseUrl?: string;
   reasoning: boolean;
   input: ("text" | "image")[];
   cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
@@ -182,6 +283,26 @@ export function buildCatalog(payload: unknown): OpenluxModel[] {
   for (const entry of selectCatalogEntries(payload)) {
     const model = mapCatalogEntry(entry);
     if (model && !byId.has(model.id)) byId.set(model.id, model);
+  }
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * Overlay curated metadata on relay-derived models and append curated entries
+ * the relay did not list. Applied when models are handed to pi, never to the
+ * cache, so the cache keeps the relay's own answer and `fetchOpenluxCatalog`'s
+ * empty-list check still detects a relay that serves nothing.
+ */
+export function withCuratedModels(models: readonly OpenluxModel[]): OpenluxModel[] {
+  const byId = new Map<string, OpenluxModel>();
+  for (const model of models) {
+    const curated = curatedFor(model.id);
+    byId.set(model.id, curated ? { ...model, ...curated } : model);
+  }
+  for (const [id, curated] of Object.entries(CURATED_MODELS)) {
+    if (!byId.has(id)) {
+      byId.set(id, { id, ...curated, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } });
+    }
   }
   return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
 }

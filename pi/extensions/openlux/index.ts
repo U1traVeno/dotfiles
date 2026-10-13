@@ -9,6 +9,7 @@ import {
   OPENLUX_PROVIDER_ID,
   OPENLUX_PROVIDER_NAME,
   fetchOpenluxCatalog,
+  withCuratedModels,
   type OpenluxModel,
 } from "./catalog.ts";
 
@@ -122,21 +123,23 @@ export default async function openluxExtension(pi: ExtensionAPI): Promise<void> 
     baseUrl: OPENLUX_BASE_URL,
     api: "google-generative-ai",
     // apiKey is intentionally omitted so the key is resolved from auth.json.
-    models,
+    // Curated OpenAI/Anthropic entries overlay the relay list, so the supply
+    // never depends on the relay publishing them at all.
+    models: withCuratedModels(models),
     async refreshModels(context) {
-      if (!context.allowNetwork || context.signal.aborted) return models;
+      if (!context.allowNetwork || context.signal.aborted) return withCuratedModels(models);
       const apiKey = await resolveApiKey(context.credential);
       if (apiKey === undefined) {
-        if (models.length > 0) return models;
+        if (models.length > 0) return withCuratedModels(models);
         throw new Error("OpenLux: no API key configured; run /login openlux");
       }
       try {
         const refreshed = await fetchOpenluxCatalog(apiKey, context.signal, REFRESH_TIMEOUT_MS);
         models = refreshed;
         await writeCache(refreshed);
-        return refreshed;
+        return withCuratedModels(refreshed);
       } catch (error) {
-        if (models.length > 0) return models;
+        if (models.length > 0) return withCuratedModels(models);
         throw error;
       }
     },
