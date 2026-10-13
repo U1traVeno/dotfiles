@@ -97,15 +97,16 @@
   # C-Space is this host's tmux prefix so that a bare Ctrl-b reaches the tmux
   # on the far side of an SSH session instead of this one (the pairing is
   # documented in modules/shell/tmux.nix). At tmux's default Ctrl-b nothing
-  # needs to be said at all -- see hosts/thinkpad-veno.nix.
+  # needs to be said at all -- see hosts/headless-veno.nix.
   programs.tmux.prefix = "C-Space";
 
-  # clipbridge: lets Claude Code on the ThinkPad paste images from this Mac's
-  # clipboard. Every SSH session to the ThinkPad (`thinkpad` through frp,
-  # `thinkpad-local` on the LAN) forwards its 127.0.0.1:47851 back to this
-  # Mac's sshd, and the xclip stand-in there runs `pngpaste` / `pbpaste` here
-  # through it (see hosts/thinkpad-veno.nix). This needs Remote Login enabled
-  # and the ThinkPad's key in ~/.ssh/authorized_keys.
+  # clipbridge: lets Claude Code on the headless Linux hosts paste images from
+  # this Mac's clipboard. Every interactive SSH session to one of them (the
+  # ThinkPad as `thinkpad` through frp or `thinkpad-local` on the LAN, the RHEL 9
+  # VM as `eda-rhel9-01.idm.paramer.top`) forwards its 127.0.0.1:47851 back to
+  # this Mac's sshd, and the xclip stand-in there runs `pngpaste` / `pbpaste`
+  # here through it (see hosts/headless-veno.nix). This needs Remote Login
+  # enabled and each host's key in ~/.ssh/authorized_keys.
   #
   # ~/.ssh/config stays hand-written (it holds machine-local entries), so it
   # pulls this in with `Include ~/.ssh/clipbridge.conf` near its top, before
@@ -119,7 +120,7 @@
   # rather than `host`, because `thinkpad` and the old `fedora` share a
   # HostName.
   home.file.".ssh/clipbridge.conf".text = ''
-    Match originalhost thinkpad,thinkpad-local sessiontype shell
+    Match originalhost thinkpad,thinkpad-local,eda-rhel9-01.idm.paramer.top sessiontype shell
       RemoteForward 127.0.0.1:47851 localhost:22
       LogLevel ERROR
   '';

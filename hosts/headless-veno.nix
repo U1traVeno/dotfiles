@@ -2,7 +2,7 @@
 let
   # Claude Code pastes images on Linux by shelling out to
   # `xclip -selection clipboard -t TARGETS|image/png -o` on the machine it
-  # runs on. This headless box has no clipboard of its own; the images live on
+  # runs on. These headless boxes have no clipboard of their own; the images live on
   # the MacBook whose kitty/tmux this is being used from. That Mac forwards
   # 127.0.0.1:47851 here back to its own sshd (see clipbridge in
   # hosts/macbook-veno.nix), so this stand-in for xclip reads the Mac's
@@ -59,6 +59,7 @@ in
 {
   imports = [
     ../modules/programs/pi-agent.nix
+    ../modules/shell/bash.nix
     ../modules/shell/zsh.nix
     ../modules/shell/tmux.nix
     ../modules/shell/direnv.nix
@@ -87,6 +88,13 @@ in
     sessionPath = [ "$HOME/.cargo/bin" ];
 
     packages = [ xclip-clipbridge ];
+
+    # Programs from nixpkgs link their own glibc, which cannot read a
+    # distribution's locale-archive (RHEL 9's glibc is older than nixpkgs'), and
+    # then warn about LC_* or mangle UTF-8. Point them at nixpkgs' archive.
+    # LANG itself is deliberately left to the distribution / SSH client.
+    sessionVariables.LOCALE_ARCHIVE =
+      "${pkgs.glibcLocales}/lib/locale/locale-archive";
   };
 
   programs.home-manager.enable = true;

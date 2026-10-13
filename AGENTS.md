@@ -1,22 +1,25 @@
 # AGENTS.md
 
 This repository manages Home Manager configurations for multiple users on the
-Fedora ThinkPad homelab. Treat it as configuration that affects real user home
-directories, not as a disposable package list.
+headless Linux homelab hosts (a Fedora ThinkPad and a RHEL 9 VM). Treat it as
+configuration that affects real user home directories, not as a disposable
+package list.
 
 ## Repository structure
 
 - `flake.nix` exports Home Manager configurations as `<user>@<host>`.
-- `hosts/thinkpad-veno.nix` composes the environment for `/home/veno`.
-- `hosts/thinkpad-hermes.nix` currently composes the environment for the
-  `/home/hermes-fp` account on this ThinkPad.
+- `hosts/headless-veno.nix` composes the environment for `/home/veno` on every
+  headless host; "headless" names a role, not a machine.
+- `hosts/headless-hermes.nix` currently composes the environment for the
+  `/home/hermes-fp` account on the ThinkPad. The hermes accounts are planned
+  for removal.
 - `modules/packages/` contains reusable package groups.
 - `modules/shell/` contains interactive shell configuration.
 - `packages/` contains packages maintained by this repository.
 
 Keep user-specific composition in `hosts/`. Add or change a shared module only
 when the behavior should apply to every host that imports it. Do not make an
-Agent account configuration import `thinkpad-veno.nix`.
+Agent account configuration import `headless-veno.nix`.
 
 Hermes Agent accounts are not required to use the literal username `hermes`.
 The normal convention is `hermes-<scope>`, such as `hermes-fp` for the Flow Plan
@@ -90,7 +93,7 @@ nix --extra-experimental-features 'nix-command flakes' \
 ```
 
 For the current ThinkPad deployment, the concrete output is
-`hermes-fp@thinkpad`. Every future `hermes-<scope>` account must receive its own
+`hermes-fp@headless`. Every future `hermes-<scope>` account must receive its own
 host module and output; it must not apply another Agent account's configuration
 and then patch the generated home by hand.
 

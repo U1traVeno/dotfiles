@@ -23,17 +23,21 @@
       # `homeConfigurations` and `checks` are derived from the same table and
       # cannot drift apart.
       hosts = {
-        "veno@thinkpad" = {
+        # "headless" is a role, not a machine: the same home is used on every
+        # headless x86_64 Linux box (the Fedora ThinkPad and the RHEL 9 VM).
+        "veno@headless" = {
           system = "x86_64-linux";
-          module = ./hosts/thinkpad-veno.nix;
+          module = ./hosts/headless-veno.nix;
         };
-        "hermes-fp@thinkpad" = {
+        # The two hermes-* homes are planned for removal; the accounts are no
+        # longer in use. Do not build new things on them.
+        "hermes-fp@headless" = {
           system = "x86_64-linux";
-          module = ./hosts/thinkpad-hermes.nix;
+          module = ./hosts/headless-hermes.nix;
         };
-        "hermes-d@thinkpad" = {
+        "hermes-d@headless" = {
           system = "x86_64-linux";
-          module = ./hosts/thinkpad-hermes-d.nix;
+          module = ./hosts/headless-hermes-d.nix;
         };
         "veno@macbook" = {
           system = "aarch64-darwin";
@@ -65,7 +69,7 @@
       # check --all-systems` something to validate and provides a stable
       # attribute for really building one host:
       #
-      #   nix build .#checks.x86_64-linux.home-veno-thinkpad
+      #   nix build .#checks.x86_64-linux.home-veno-headless
       #
       # Note that `nix flake check` only evaluates checks for other systems but
       # actually builds the ones matching the current system, so it is slow on

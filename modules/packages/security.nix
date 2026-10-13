@@ -1,4 +1,4 @@
 { ... }:
 {
-  # Security tooling is selected per host; the initial ThinkPad profile is empty.
+  # Security tooling is selected per host; the headless profile is empty.
 }

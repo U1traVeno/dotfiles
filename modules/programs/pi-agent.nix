@@ -6,7 +6,7 @@ let
     if pkgs.stdenv.hostPlatform.isDarwin then
       "veno@macbook"
     else
-      "veno@thinkpad";
+      "veno@headless";
 in
 {
   home.packages = [
