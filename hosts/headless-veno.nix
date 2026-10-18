@@ -58,6 +58,7 @@ let
 in
 {
   imports = [
+    ../modules/platform/system-ca.nix
     ../modules/programs/pi-agent.nix
     ../modules/shell/bash.nix
     ../modules/shell/zsh.nix
