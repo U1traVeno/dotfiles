@@ -15,10 +15,13 @@ A new headless machine (tested target: RHEL 9, x86_64) needs these steps, in
 this order. Only the first needs root, and none of it is done by Home Manager
 itself because Nix has to exist first.
 
-1. Install Nix in multi-user mode (creates `/nix`, so it needs sudo once):
+1. Install Nix in multi-user mode. `/nix` is shared by every user, so this is
+   the one step that needs root; on a machine where you have no sudo, ask an
+   administrator to run it (it creates `/nix`, the `nixbld` users and
+   `nix-daemon.service`, and edits `/etc/nix` and `/etc/profile.d`):
 
    ```bash
-   sh <(curl --proto '=https' --tlsv1.2 -fsSL https://nixos.org/nix/install) --daemon
+   curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon
    ```
 
 2. Enable flakes for your user, then open a new shell:
