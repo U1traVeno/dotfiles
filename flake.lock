@@ -8,11 +8,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784043956,
-        "narHash": "sha256-7T0SfGVxQhAn5ksb3Kap4UAGGwC3TZ2bPrCw5q9+DUE=",
+        "lastModified": 1791786843,
+        "narHash": "sha256-7X7yPKiW5uDKqtoreITAe08AhJVEwv05TbEKaCfwwjI=",
         "owner": "SaladDay",
         "repo": "cc-switch-cli",
-        "rev": "3c3a7f9d602dab2932f02e764a628ccca5285b0d",
+        "rev": "1b43ce6f6c535506b4b5a675db577d09f2299922",
         "type": "github"
       },
       "original": {
