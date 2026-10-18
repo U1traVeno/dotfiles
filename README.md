@@ -21,7 +21,7 @@ itself because Nix has to exist first.
    `nix-daemon.service`, and edits `/etc/nix` and `/etc/profile.d`):
 
    ```bash
-   curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon
+   bash <(curl -L https://nixos.org/nix/install) --daemon
    ```
 
 2. Enable flakes for your user, then open a new shell:
