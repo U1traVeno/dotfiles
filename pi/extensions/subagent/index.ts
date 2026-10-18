@@ -16,6 +16,16 @@
  * from "the subagent never ran".
  *
  * Classification now lives in ./outcome.ts, which is pure and tested.
+ *
+ * Two further local changes:
+ *
+ *   - The child runs on the parent's current model and thinking level unless
+ *     the call names another model. Upstream passed no `--model`, so children
+ *     silently fell back to the configured default provider, whatever it was.
+ *   - Every report ends with the child's model, token usage and USD cost as
+ *     pi priced them. When `PI_SUBAGENT_USAGE_LOG` names a file, one JSON line
+ *     per child run is also appended there, so a caller can total the cost of
+ *     a whole delegation tree without trusting the parent model to relay it.
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
@@ -32,9 +42,11 @@ import { Type } from "@sinclair/typebox";
 
 import {
 	type AssistantTurn,
+	type ChildOutcome,
 	type ChildRun,
 	assistantTurn,
 	decideOutcome,
+	totalUsage,
 } from "./outcome.ts";
 
 const MAX_TASK_ARG_LENGTH = 4000;
@@ -45,6 +57,14 @@ const MAX_TASK_ARG_LENGTH = 4000;
  * transition away from the npm package.
  */
 const NESTING_GUARD = "PI_SUBAGENT_LITE_DISABLE";
+
+const USAGE_LOG_ENV = "PI_SUBAGENT_USAGE_LOG";
+
+/** What the child runs on: a `provider/id` pattern and an optional thinking level. */
+interface ChildModel {
+	model?: string;
+	thinking?: string;
+}
 
 const MINIMAL_SYSTEM_PROMPT = `You are a subagent running in an isolated pi process with access to file system and shell tools.
 
@@ -172,15 +192,48 @@ function awaitChildExit(
 	});
 }
 
+function formatUsage(model: string, run: ChildRun): string {
+	const usage = totalUsage(run.turns);
+	const k = (n: number) => `${(n / 1000).toFixed(1)}k`;
+	return (
+		`--- subagent usage: ${model}, ${run.turns.length} turn(s), ` +
+		`input ${k(usage.input)}, cache read ${k(usage.cacheRead)}, cache write ${k(usage.cacheWrite)}, ` +
+		`output ${k(usage.output)}, cost $${usage.cost.toFixed(4)} ---`
+	);
+}
+
+async function logUsage(model: string, task: string, run: ChildRun, outcome: ChildOutcome): Promise<void> {
+	const file = process.env[USAGE_LOG_ENV];
+	if (!file) return;
+	const line = {
+		at: new Date().toISOString(),
+		model,
+		ok: outcome.kind === "report",
+		turns: run.turns.length,
+		task: task.slice(0, 200),
+		...totalUsage(run.turns),
+		...(outcome.kind === "failure" ? { error: outcome.message.slice(0, 2000) } : {}),
+	};
+	try {
+		await fs.promises.appendFile(file, `${JSON.stringify(line)}\n`, "utf-8");
+	} catch {
+		// The ledger is a convenience; the report still carries the usage.
+	}
+}
+
 async function runSubagent(
 	cwd: string,
 	task: string,
 	skills: string[],
+	childModel: ChildModel,
 	signal?: AbortSignal,
 	onUpdate?: OnUpdate,
 ): Promise<string> {
 	const args: string[] = ["--mode", "json", "-p", "--no-session"];
+	if (childModel.model) args.push("--model", childModel.model);
+	if (childModel.thinking) args.push("--thinking", childModel.thinking);
 	for (const skill of skills) args.push("--skill", skill);
+	const modelLabel = childModel.model ?? "(default model)";
 
 	let tmpDir: string | null = null;
 
@@ -232,12 +285,14 @@ async function runSubagent(
 		run.stderr = run.stderr.trim();
 
 		const outcome = decideOutcome(run);
+		const usageLine = formatUsage(modelLabel, run);
+		await logUsage(modelLabel, task, run, outcome);
 		if (outcome.kind === "failure") {
 			// pi only marks a tool result as an error when execute() throws;
 			// returning { isError: true } is ignored by the agent loop.
-			throw new Error(outcome.message);
+			throw new Error(`${outcome.message}\n\n${usageLine}`);
 		}
-		return outcome.text;
+		return `${outcome.text}\n\n${usageLine}`;
 	} finally {
 		if (tmpDir) {
 			try {
@@ -259,6 +314,12 @@ const SubagentParams = Type.Object({
 			},
 		),
 	),
+	model: Type.Optional(
+		Type.String({
+			description:
+				'Model for the subagent as "provider/id", optionally with ":<thinking>". Defaults to the current model and thinking level.',
+		}),
+	),
 });
 
 export default function (pi: ExtensionAPI) {
@@ -276,6 +337,12 @@ export default function (pi: ExtensionAPI) {
 		parameters: SubagentParams,
 
 		async execute(_toolCallId, params, signal, onUpdate, ctx) {
+			const childModel: ChildModel = params.model
+				? { model: params.model }
+				: {
+						model: ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
+						thinking: pi.getThinkingLevel(),
+					};
 			return {
 				content: [
 					{
@@ -284,6 +351,7 @@ export default function (pi: ExtensionAPI) {
 							ctx.cwd,
 							params.task,
 							params.skills ?? [],
+							childModel,
 							signal,
 							onUpdate,
 						),
@@ -298,6 +366,7 @@ export default function (pi: ExtensionAPI) {
 			let text =
 				theme.fg("toolTitle", theme.bold("subagent ")) +
 				theme.fg("dim", taskPreview);
+			if (args.model) text += ` ${theme.fg("accent", args.model)}`;
 			const skills = args.skills ?? [];
 			if (skills.length > 0)
 				text += ` ${theme.fg("accent", `+${skills.length} skills`)}`;

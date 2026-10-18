@@ -24,6 +24,16 @@ export interface AssistantTurn {
 	/** Concatenated text parts, or null when the turn carried no text part. */
 	text: string | null;
 	toolCalls: string[];
+	/** Token usage and USD cost the provider reported for this turn, if any. */
+	usage?: TurnUsage;
+}
+
+export interface TurnUsage {
+	input: number;
+	output: number;
+	cacheRead: number;
+	cacheWrite: number;
+	cost: number;
 }
 
 export interface ChildRun {
@@ -47,6 +57,7 @@ export function assistantTurn(message: unknown): AssistantTurn | null {
 		content?: unknown;
 		stopReason?: string;
 		errorMessage?: string;
+		usage?: unknown;
 	};
 	if (msg.role !== "assistant") return null;
 
@@ -66,7 +77,40 @@ export function assistantTurn(message: unknown): AssistantTurn | null {
 		errorMessage: msg.errorMessage,
 		text: texts.length > 0 ? texts.join("") : null,
 		toolCalls,
+		usage: turnUsage(msg.usage),
 	};
+}
+
+function count(value: unknown): number {
+	return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+/** Read pi's `Usage` defensively; a missing or malformed one counts as none. */
+function turnUsage(raw: unknown): TurnUsage | undefined {
+	if (!raw || typeof raw !== "object") return undefined;
+	const usage = raw as Record<string, unknown>;
+	const cost = usage.cost as Record<string, unknown> | undefined;
+	return {
+		input: count(usage.input),
+		output: count(usage.output),
+		cacheRead: count(usage.cacheRead),
+		cacheWrite: count(usage.cacheWrite),
+		cost: count(cost?.total),
+	};
+}
+
+/** Sum the usage of every turn in a child run. */
+export function totalUsage(turns: AssistantTurn[]): TurnUsage {
+	const total: TurnUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
+	for (const turn of turns) {
+		if (!turn.usage) continue;
+		total.input += turn.usage.input;
+		total.output += turn.usage.output;
+		total.cacheRead += turn.usage.cacheRead;
+		total.cacheWrite += turn.usage.cacheWrite;
+		total.cost += turn.usage.cost;
+	}
+	return total;
 }
 
 /**

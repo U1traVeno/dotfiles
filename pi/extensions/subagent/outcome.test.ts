@@ -5,6 +5,7 @@ import {
 	type AssistantTurn,
 	type ChildRun,
 	assistantTurn,
+	totalUsage,
 	decideOutcome,
 } from "./outcome.ts";
 
@@ -189,4 +190,26 @@ test("no failure outcome is ever a bare empty string", () => {
 		assert.notEqual(message.trim(), "");
 		assert.notEqual(message, "(no output)");
 	}
+});
+
+test("assistantTurn reads usage and totalUsage sums it across turns", () => {
+	const usage = (input: number, cost: number) => ({
+		input,
+		output: 10,
+		cacheRead: 100,
+		cacheWrite: 0,
+		totalTokens: input + 110,
+		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: cost },
+	});
+	const first = assistantTurn({ role: "assistant", content: [], usage: usage(5, 0.25) });
+	const second = assistantTurn({ role: "assistant", content: [], usage: usage(7, 0.5) });
+	const bare = assistantTurn({ role: "assistant", content: [] });
+	assert.equal(bare?.usage, undefined);
+	assert.deepEqual(totalUsage([first!, second!, bare!]), {
+		input: 12,
+		output: 20,
+		cacheRead: 200,
+		cacheWrite: 0,
+		cost: 0.75,
+	});
 });

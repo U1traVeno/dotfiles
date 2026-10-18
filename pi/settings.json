@@ -1,8 +1,8 @@
 {
   "lastChangelogVersion": "1.2.0",
   "theme": "dark",
-  "defaultProvider": "openlux",
-  "defaultModel": "claude-sonnet-5-5",
+  "defaultProvider": "qiniu",
+  "defaultModel": "deepseek/deepseek-v4.1-flash",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:pi-web-access",
@@ -11,7 +11,8 @@
     "npm:pi-cc-extensions"
   ],
   "enabledModels": [
-    "openlux/gemini-3.8-flash",
+    "qiniu/deepseek/deepseek-v4.1-flash",
+    "qiniu/xiaomi/mimo-v2.6-pro",
     "opencode-go/deepseek-v4.1-flash",
     "qiniu/stepfun/step-3.7-flash",
     "qiniu/moonshotai/kimi-k3",
@@ -19,11 +20,12 @@
     "opencode-go/mimo-v2.6-pro",
     "opencode-go/step-5-preview-free",
     "opencode-go/longcat-2.5-preview-free",
-    "openlux/gpt-6.1-sol",
-    "openlux/claude-sonnet-5-5",
-    "openlux/claude-opus-5-5",
-    "openlux/claude-fable-5-1",
-    "openlux/gpt-6-astra",
-    "openlux/claude-haiku-5-5"
-  ]
+    "opencode-go/beam-free"
+  ],
+  "retry": {
+    "enabled": true,
+    "maxRetries": 10,
+    "baseDelayMs": 5000,
+    "maxAgentDelayMs": 60000
+  }
 }
