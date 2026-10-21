@@ -216,3 +216,16 @@ if [[ "$(uname)" == Darwin ]]; then
     esac
   }
 fi
+
+# === 重置被异常退出的 TUI 遗留的输入模式 ===
+# 远端 tmux/nvim 等程序会打开鼠标上报、焦点上报 (?1004) 和 extended keys
+# (CSI > 4 m)，正常退出时再关掉。ssh broken pipe 时远端来不及关，模式就残留在
+# 本地 tmux pane 里：Ctrl-D 被编码成 \e[100;5u 而不是 ^D，切换焦点和移动鼠标
+# 会把 \e[I、\e[O 之类的序列喂给 vi 模式的 zle，触发响铃，于是 tmux 窗口标出
+# "!"，kitty 也会在 Dock 里跳动。shell 提示符阶段不需要这些模式，所以每次
+# 显示提示符前统一关掉。
+_veno_reset_input_modes() {
+  print -n '\e[?1000l\e[?1002l\e[?1003l\e[?1005l\e[?1006l\e[?1015l\e[?1004l\e[>4m'
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _veno_reset_input_modes
