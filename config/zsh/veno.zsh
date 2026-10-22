@@ -224,7 +224,14 @@ fi
 # 会把 \e[I、\e[O 之类的序列喂给 vi 模式的 zle，触发响铃，于是 tmux 窗口标出
 # "!"，kitty 也会在 Dock 里跳动。shell 提示符阶段不需要这些模式，所以每次
 # 显示提示符前统一关掉。
+# 第一次 precmd 时 p10k instant prompt 还在捕获输出，这时打印会触发 "Console
+# output during zsh initialization detected"；新启动的 shell 也不会有残留模式，
+# 所以跳过第一次。
 _veno_reset_input_modes() {
+  if (( ! ${+_veno_input_modes_armed} )); then
+    typeset -g _veno_input_modes_armed=1
+    return
+  fi
   print -n '\e[?1000l\e[?1002l\e[?1003l\e[?1005l\e[?1006l\e[?1015l\e[?1004l\e[>4m'
 }
 autoload -Uz add-zsh-hook
